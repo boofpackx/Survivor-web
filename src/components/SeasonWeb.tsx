@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Season } from '../data/seasons'
-import { WIKI_BASE } from '../data/seasons'
+import { SEASONS, WIKI_BASE } from '../data/seasons'
 import { getPageImage, getSections } from '../lib/fandom'
 import type { WikiSection } from '../lib/fandom'
 
@@ -12,10 +12,21 @@ export type WebNode =
   | { kind: 'videos'; label: string; icon: string }
   | { kind: 'wiki'; label: string; icon: string }
 
+/** URL-safe identifier for a node, used in deep links (#/s/28/castaways). */
+export function nodeSlug(node: WebNode): string {
+  return node.kind === 'section'
+    ? node.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    : node.kind
+}
+
 interface Props {
   season: Season
   activeNode: WebNode | null
+  /** deep-link node slug to open automatically once nodes are known */
+  autoOpenSlug?: string | null
+  onAutoOpened?: () => void
   onNodeClick: (node: WebNode) => void
+  onNavigate: (season: Season) => void
   onClose: () => void
 }
 
@@ -39,7 +50,9 @@ function nodesFromSections(sections: WikiSection[]): WebNode[] {
   return nodes
 }
 
-export default function SeasonWeb({ season, activeNode, onNodeClick, onClose }: Props) {
+export default function SeasonWeb({
+  season, activeNode, autoOpenSlug, onAutoOpened, onNodeClick, onNavigate, onClose,
+}: Props) {
   const [logo, setLogo] = useState<string | null>(null)
   const [logoFallback, setLogoFallback] = useState<string | null>(null)
   const [sections, setSections] = useState<WikiSection[]>([])
@@ -85,6 +98,13 @@ export default function SeasonWeb({ season, activeNode, onNodeClick, onClose }: 
     return base
   }, [sections, season])
 
+  useEffect(() => {
+    if (!autoOpenSlug || !loaded) return
+    const match = nodes.find(n => nodeSlug(n) === autoOpenSlug)
+    if (match && match.kind !== 'wiki') onNodeClick(match)
+    onAutoOpened?.()
+  }, [autoOpenSlug, loaded, nodes, onNodeClick, onAutoOpened])
+
   const positioned = useMemo(() => {
     const n = nodes.length
     return nodes.map((node, i) => {
@@ -101,6 +121,25 @@ export default function SeasonWeb({ season, activeNode, onNodeClick, onClose }: 
       <button className="web-close" onClick={onClose} title="Back to world map">
         ✕ <span>Back to the map</span>
       </button>
+
+      {(() => {
+        const prev = SEASONS.find(s => s.number === season.number - 1)
+        const next = SEASONS.find(s => s.number === season.number + 1)
+        return (
+          <>
+            {prev && (
+              <button className="web-nav web-nav-prev" onClick={() => onNavigate(prev)} title={`Survivor: ${prev.title}`}>
+                ◀ <span>S{prev.number}</span>
+              </button>
+            )}
+            {next && (
+              <button className="web-nav web-nav-next" onClick={() => onNavigate(next)} title={`Survivor: ${next.title}`}>
+                <span>S{next.number}</span> ▶
+              </button>
+            )}
+          </>
+        )
+      })()}
 
       <svg className="web-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
         {positioned.map(({ x, y }, i) => (
@@ -119,6 +158,7 @@ export default function SeasonWeb({ season, activeNode, onNodeClick, onClose }: 
             src={logo}
             alt={`Survivor: ${season.title} logo`}
             className="web-logo"
+            referrerPolicy="no-referrer"
             onError={handleLogoError}
           />
         ) : (

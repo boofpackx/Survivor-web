@@ -444,3 +444,25 @@ export const DEFAULT_THEME: SeasonTheme = t(
 )
 
 export const WIKI_BASE = 'https://survivor.fandom.com'
+
+/** Filming hubs that hosted multiple seasons — shown as one medallion when zoomed out. */
+export interface Cluster {
+  id: string
+  label: string
+  lat: number
+  lng: number
+  seasons: number[]
+}
+
+export const CLUSTERS: Cluster[] = [
+  { id: 'fiji', label: 'Fiji', lat: FIJI.lat, lng: FIJI.lng, seasons: [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48] },
+  { id: 'samoa', label: 'Samoa', lat: -13.94, lng: -171.77, seasons: [19, 20, 23, 24] },
+  { id: 'nicaragua', label: 'Nicaragua', lat: 11.2, lng: -85.83, seasons: [21, 22, 29, 30] },
+  { id: 'pearl-islands', label: 'Pearl Islands', lat: 8.3, lng: -79.06, seasons: [7, 8, 12] },
+  { id: 'palau', label: 'Palau', lat: 7.27, lng: 134.42, seasons: [10, 16] },
+  { id: 'cambodia', label: 'Cambodia', lat: 10.65, lng: 103.24, seasons: [31, 32] },
+  { id: 'philippines', label: 'Philippines', lat: 16.1, lng: 123.0, seasons: [25, 26, 27, 28] },
+]
+
+/** Zoom level at which clusters burst apart into individual torches. */
+export const CLUSTER_BREAK_ZOOM = 7
