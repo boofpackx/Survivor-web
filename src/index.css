@@ -1,0 +1,30 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #0b0a08;
+  color: #f5efe2;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input {
+  font-family: inherit;
+}
