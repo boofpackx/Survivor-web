@@ -29,7 +29,7 @@ export default function SeasonIndex({ open, selected, onSelect, onToggle }: Prop
         {open ? '✕ Close' : '☰ Seasons'}
       </button>
       <nav className={`season-index ${open ? 'season-index-open' : ''}`}>
-        <h3>48 Seasons · 20 Locations</h3>
+        <h3>50 Seasons · 20 Locations</h3>
         <input
           type="search"
           placeholder="Search season, country, winner…"

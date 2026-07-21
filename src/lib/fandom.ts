@@ -7,10 +7,42 @@ function apiUrl(params: Record<string, string>): string {
   return `${API}?${q.toString()}`
 }
 
+const CACHE_PREFIX = 'sa-api:'
+const CACHE_TTL = 24 * 60 * 60 * 1000
+
+function cacheRead(key: string): unknown | null {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key)
+    if (!raw) return null
+    const { t, d } = JSON.parse(raw) as { t: number; d: unknown }
+    if (Date.now() - t > CACHE_TTL) return null
+    return d
+  } catch {
+    return null
+  }
+}
+
+function cacheWrite(key: string, data: unknown): void {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), d: data }))
+  } catch {
+    // storage full — drop our own oldest entries and move on
+    try {
+      const mine = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX))
+      mine.slice(0, Math.ceil(mine.length / 2)).forEach(k => localStorage.removeItem(k))
+    } catch { /* ignore */ }
+  }
+}
+
 async function apiGet<T>(params: Record<string, string>): Promise<T> {
-  const res = await fetch(apiUrl(params))
+  const url = apiUrl(params)
+  const cached = cacheRead(url)
+  if (cached !== null) return cached as T
+  const res = await fetch(url)
   if (!res.ok) throw new Error(`Fandom API error ${res.status}`)
-  return res.json() as Promise<T>
+  const data = (await res.json()) as T
+  cacheWrite(url, data)
+  return data
 }
 
 export interface WikiSection {
@@ -142,4 +174,79 @@ export function cleanWikiHtml(html: string): string {
 /** Intro (section 0) with infobox stripped — used for the Overview node. */
 export function getOverviewHtml(page: string): Promise<string> {
   return getSectionHtml(page, '0')
+}
+
+export interface Castaway {
+  name: string
+  /** wiki page title for the contestant */
+  page: string
+  photo: string | null
+  /** age, hometown, profession line from the table */
+  meta: string
+  /** finish text, e.g. "7th Voted Out — Day 21" */
+  finish: string
+}
+
+const FINISH_RE = /(Sole Survivor|Runner[- ]Up|Voted Out|Eliminated|Medically Evacuated|Evacuated|Quit|Removed|Lost Fire|2nd Runner-Up)/i
+
+/**
+ * Best-effort extraction of the castaways table into structured cards.
+ * The wiki's table layout is consistent enough across seasons: one row per
+ * player with a portrait image and the contestant link in the same row.
+ */
+export function parseCastaways(sectionHtml: string): Castaway[] {
+  const doc = new DOMParser().parseFromString(sectionHtml, 'text/html')
+  const out: Castaway[] = []
+  const seen = new Set<string>()
+
+  doc.querySelectorAll('table tr').forEach(tr => {
+    const img = tr.querySelector('img')
+    if (!img) return
+    const photo = img.getAttribute('src')
+    // contestant link: first anchor whose text is a real name (not an image wrap)
+    const link = Array.from(tr.querySelectorAll('a')).find(
+      a => (a.textContent ?? '').trim().length > 2,
+    )
+    if (!link) return
+    const name = (link.textContent ?? '').trim()
+    if (seen.has(name)) return
+    const href = link.getAttribute('href') ?? ''
+    const pageMatch = href.match(/\/wiki\/([^#?]+)/)
+    if (!pageMatch) return
+
+    const nameCell = link.closest('td')
+    let meta = (nameCell?.textContent ?? '').replace(name, '').replace(/\s+/g, ' ').trim()
+    if (meta.length > 90) meta = meta.slice(0, 87) + '…'
+
+    const rowText = (tr.textContent ?? '').replace(/\s+/g, ' ')
+    const finishMatch = rowText.match(
+      new RegExp(`((?:\\d+\\w{2}\\s+)?${FINISH_RE.source}[^|]*?(?:Day\\s+\\d+)?)`, 'i'),
+    )
+    let finish = finishMatch ? finishMatch[1].trim() : ''
+    if (finish.length > 50) finish = finish.slice(0, 47) + '…'
+
+    out.push({
+      name,
+      page: decodeURIComponent(pageMatch[1]).replace(/_/g, ' '),
+      photo: photo && !photo.startsWith('data:') ? photo : null,
+      meta,
+      finish,
+    })
+    seen.add(name)
+  })
+
+  return out
+}
+
+export interface ContestantBio {
+  html: string
+  image: string | null
+}
+
+export async function getContestantBio(page: string): Promise<ContestantBio> {
+  const [html, img] = await Promise.all([
+    getSectionHtml(page, '0'),
+    getPageImage(page).catch(() => ({}) as PageImage),
+  ])
+  return { html, image: img.thumbnail ?? img.original ?? null }
 }
