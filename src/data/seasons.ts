@@ -1,3 +1,18 @@
+/** Procedural texture painted behind the season page & cards (CSS-only, palette-tinted). */
+export type TextureKey =
+  | 'jungle' | 'water' | 'sand' | 'lava' | 'bamboo' | 'parchment'
+  | 'storm' | 'gold' | 'silk' | 'savanna' | 'tribal' | 'ruins'
+
+/** Display font personality for the season. */
+export type FontKey = 'cinzel' | 'pirata' | 'rye' | 'uncial'
+
+export const FONT_STACKS: Record<FontKey, string> = {
+  cinzel: "'Cinzel', 'Georgia', serif",
+  pirata: "'Pirata One', 'Cinzel', serif",
+  rye: "'Rye', 'Cinzel', serif",
+  uncial: "'Uncial Antiqua', 'Cinzel', serif",
+}
+
 export interface SeasonTheme {
   /** main brand color for the season */
   primary: string
@@ -12,6 +27,12 @@ export interface SeasonTheme {
   text: string
   /** one-word atmosphere used for texture styling */
   mood: 'jungle' | 'outback' | 'savanna' | 'ocean' | 'island' | 'ruins' | 'river' | 'volcanic' | 'storm'
+  /** procedural background texture for the season page */
+  texture: TextureKey
+  /** display font personality */
+  font: FontKey
+  /** three motif glyphs that decorate the season page */
+  motifs: string
 }
 
 export interface Season {
@@ -40,7 +61,65 @@ const t = (
   bg2: string,
   mood: SeasonTheme['mood'],
   text = '#f5efe2',
-): SeasonTheme => ({ primary, secondary, accent, bg1, bg2, text, mood })
+): SeasonTheme => ({
+  primary, secondary, accent, bg1, bg2, text, mood,
+  // per-season overrides applied from VIBES below
+  texture: 'jungle', font: 'cinzel', motifs: '🔥 🌴 🏝️',
+})
+
+/** Per-season personality: texture + display font + motif glyphs. */
+const VIBES: Record<number, { texture: TextureKey; font: FontKey; motifs: string }> = {
+  1: { texture: 'jungle', font: 'cinzel', motifs: '🐍 🌴 🔥' },
+  2: { texture: 'sand', font: 'rye', motifs: '🦘 🏜️ 🔥' },
+  3: { texture: 'savanna', font: 'cinzel', motifs: '🦁 🌍 🛖' },
+  4: { texture: 'water', font: 'cinzel', motifs: '🗿 🌊 🛶' },
+  5: { texture: 'bamboo', font: 'cinzel', motifs: '🐘 🛕 🌺' },
+  6: { texture: 'jungle', font: 'cinzel', motifs: '🐆 🌿 🏹' },
+  7: { texture: 'parchment', font: 'pirata', motifs: '🏴‍☠️ ⚓ 💰' },
+  8: { texture: 'gold', font: 'pirata', motifs: '⭐ 🏴‍☠️ 🏆' },
+  9: { texture: 'lava', font: 'cinzel', motifs: '🌋 🐗 🥁' },
+  10: { texture: 'water', font: 'cinzel', motifs: '🐠 🌊 ⚓' },
+  11: { texture: 'ruins', font: 'uncial', motifs: '🐒 🛕 🌽' },
+  12: { texture: 'storm', font: 'pirata', motifs: '🏝️ ⛈️ 🦀' },
+  13: { texture: 'water', font: 'cinzel', motifs: '🛶 🌺 🥥' },
+  14: { texture: 'bamboo', font: 'cinzel', motifs: '🌺 🏝️ 🥁' },
+  15: { texture: 'silk', font: 'uncial', motifs: '🐉 🏮 🛕' },
+  16: { texture: 'water', font: 'cinzel', motifs: '🕷️ 🌀 🐚' },
+  17: { texture: 'savanna', font: 'cinzel', motifs: '🐘 🦍 🌅' },
+  18: { texture: 'sand', font: 'rye', motifs: '🐊 🌵 ☀️' },
+  19: { texture: 'jungle', font: 'cinzel', motifs: '🌺 🥁 🐍' },
+  20: { texture: 'gold', font: 'cinzel', motifs: '😇 😈 ⚔️' },
+  21: { texture: 'lava', font: 'rye', motifs: '🌋 🐒 🌊' },
+  22: { texture: 'lava', font: 'cinzel', motifs: '🔥 ⚔️ 🏝️' },
+  23: { texture: 'water', font: 'cinzel', motifs: '🌊 🪶 🙏' },
+  24: { texture: 'sand', font: 'cinzel', motifs: '🤝 🏝️ ☀️' },
+  25: { texture: 'storm', font: 'cinzel', motifs: '⛈️ 🐚 🏝️' },
+  26: { texture: 'jungle', font: 'cinzel', motifs: '🦀 🌴 💎' },
+  27: { texture: 'water', font: 'cinzel', motifs: '🩸 💧 ⚔️' },
+  28: { texture: 'tribal', font: 'cinzel', motifs: '🧠 💪 ✨' },
+  29: { texture: 'water', font: 'rye', motifs: '👯 🩸 🌊' },
+  30: { texture: 'storm', font: 'rye', motifs: '👔 🔧 🏄' },
+  31: { texture: 'ruins', font: 'uncial', motifs: '🛕 🐍 🌧️' },
+  32: { texture: 'jungle', font: 'uncial', motifs: '🥵 🐜 🌡️' },
+  33: { texture: 'tribal', font: 'cinzel', motifs: '📼 📱 ⚡' },
+  34: { texture: 'gold', font: 'cinzel', motifs: '♟️ 🔄 💥' },
+  35: { texture: 'tribal', font: 'cinzel', motifs: '🦸 ⚕️ 💼' },
+  36: { texture: 'parchment', font: 'uncial', motifs: '👻 🗿 ⚱️' },
+  37: { texture: 'storm', font: 'cinzel', motifs: '🗿 🪨 🎯' },
+  38: { texture: 'lava', font: 'cinzel', motifs: '🕯️ ⛵ 🪨' },
+  39: { texture: 'ruins', font: 'uncial', motifs: '🗿 🎓 🏝️' },
+  40: { texture: 'gold', font: 'cinzel', motifs: '👑 🏆 ⚔️' },
+  41: { texture: 'jungle', font: 'cinzel', motifs: '⏱️ 🌱 🔥' },
+  42: { texture: 'tribal', font: 'cinzel', motifs: '🎲 🌀 🔥' },
+  43: { texture: 'water', font: 'cinzel', motifs: '🌊 🐢 🔥' },
+  44: { texture: 'tribal', font: 'cinzel', motifs: '🐦 🪤 💌' },
+  45: { texture: 'water', font: 'cinzel', motifs: '🧭 🌊 💰' },
+  46: { texture: 'jungle', font: 'cinzel', motifs: '🌴 🃏 🔥' },
+  47: { texture: 'storm', font: 'cinzel', motifs: '🕹️ 🍝 ⚡' },
+  48: { texture: 'bamboo', font: 'cinzel', motifs: '🤝 🔥 🏝️' },
+  49: { texture: 'water', font: 'cinzel', motifs: '🌺 🌊 🔥' },
+  50: { texture: 'gold', font: 'cinzel', motifs: '🏆 👑 🎆' },
+}
 
 /** Mamanuca Islands, Fiji — home of every season since 33. Pins fan out in a ring. */
 const FIJI = { lat: -17.66, lng: 177.1 }
@@ -52,7 +131,7 @@ const fijiRing = (i: number, count = 18, radius = 0.30) => {
   }
 }
 
-export const SEASONS: Season[] = [
+const RAW_SEASONS: Season[] = [
   {
     number: 1, title: 'Borneo', wikiPage: 'Survivor: Borneo',
     location: 'Pulau Tiga, Sabah', country: 'Malaysia',
@@ -454,6 +533,12 @@ export const SEASONS: Season[] = [
     theme: t('#b8860b', '#8e0000', '#ffd700', '#0d0802', '#241a05', 'storm'),
   },
 ]
+
+/** RAW palettes merged with each season's personality (texture / font / motifs). */
+export const SEASONS: Season[] = RAW_SEASONS.map(s => ({
+  ...s,
+  theme: { ...s.theme, ...(VIBES[s.number] ?? {}) },
+}))
 
 export const DEFAULT_THEME: SeasonTheme = t(
   '#d97b29', '#5d4037', '#ffb74d', '#120d08', '#241a10', 'island',

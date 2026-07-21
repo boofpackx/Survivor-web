@@ -3,6 +3,7 @@ import SurvivorMap from './components/SurvivorMap'
 import SeasonWeb, { nodeSlug } from './components/SeasonWeb'
 import type { WebNode } from './components/SeasonWeb'
 import DetailPanel from './components/DetailPanel'
+import SeasonPage from './components/SeasonPage'
 import SeasonIndex from './components/SeasonIndex'
 import Embers from './components/Embers'
 import Logotype from './components/Logotype'
@@ -14,8 +15,18 @@ import { applyTheme } from './lib/theme'
 import './App.css'
 
 type Stage = 'world' | 'flying' | 'web'
+type ViewMode = 'page' | 'web'
 
 const VISITED_KEY = 'sa-visited'
+const VIEW_KEY = 'sa-view'
+
+function loadViewMode(): ViewMode {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'web' ? 'web' : 'page'
+  } catch {
+    return 'page'
+  }
+}
 
 function loadVisited(): Set<number> {
   try {
@@ -42,6 +53,14 @@ export default function App() {
   const [visited, setVisited] = useState<Set<number>>(loadVisited)
   const [pendingSlug, setPendingSlug] = useState<string | null>(initial.slug)
   const [wiping, setWiping] = useState(false)
+  const [viewMode, setViewModeState] = useState<ViewMode>(loadViewMode)
+
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeState(mode)
+    try {
+      localStorage.setItem(VIEW_KEY, mode)
+    } catch { /* ignore */ }
+  }, [])
 
   useEffect(() => {
     applyTheme(selected?.theme ?? null)
@@ -108,6 +127,8 @@ export default function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
+      // the season page's castaway bio modal handles its own Escape layer
+      if (document.querySelector('.sp-modal-backdrop')) return
       if (activeNode) setActiveNode(null)
       else if (selected) handleCloseWeb()
     }
@@ -143,7 +164,8 @@ export default function App() {
         <div className="map-vignette" />
       </div>
 
-      <Embers />
+      {/* embers sit below the opaque season page — skip the rAF loop there */}
+      {!(stage === 'web' && viewMode === 'page') && <Embers />}
       <SparkBurst />
 
       {wiping && <FlameWipe onDone={() => setWiping(false)} />}
@@ -155,7 +177,18 @@ export default function App() {
         </div>
       )}
 
-      {stage === 'web' && selected && (
+      {stage === 'web' && selected && viewMode === 'page' && (
+        <SeasonPage
+          season={selected}
+          autoScrollSlug={pendingSlug}
+          onAutoScrolled={() => setPendingSlug(null)}
+          onNavigate={handleSelect}
+          onSwitchToWeb={() => setViewMode('web')}
+          onClose={handleCloseWeb}
+        />
+      )}
+
+      {stage === 'web' && selected && viewMode === 'web' && (
         <SeasonWeb
           season={selected}
           activeNode={activeNode}
@@ -163,11 +196,15 @@ export default function App() {
           onAutoOpened={() => setPendingSlug(null)}
           onNodeClick={setActiveNode}
           onNavigate={handleSelect}
+          onSwitchToPage={() => {
+            setActiveNode(null)
+            setViewMode('page')
+          }}
           onClose={handleCloseWeb}
         />
       )}
 
-      {stage === 'web' && selected && activeNode && (
+      {stage === 'web' && selected && viewMode === 'web' && activeNode && (
         <DetailPanel season={selected} node={activeNode} onClose={() => setActiveNode(null)} />
       )}
 

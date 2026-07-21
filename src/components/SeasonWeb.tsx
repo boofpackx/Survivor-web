@@ -27,6 +27,7 @@ interface Props {
   onAutoOpened?: () => void
   onNodeClick: (node: WebNode) => void
   onNavigate: (season: Season) => void
+  onSwitchToPage: () => void
   onClose: () => void
 }
 
@@ -51,7 +52,7 @@ function nodesFromSections(sections: WikiSection[]): WebNode[] {
 }
 
 export default function SeasonWeb({
-  season, activeNode, autoOpenSlug, onAutoOpened, onNodeClick, onNavigate, onClose,
+  season, activeNode, autoOpenSlug, onAutoOpened, onNodeClick, onNavigate, onSwitchToPage, onClose,
 }: Props) {
   const [logo, setLogo] = useState<string | null>(null)
   const [logoFallback, setLogoFallback] = useState<string | null>(null)
@@ -120,6 +121,10 @@ export default function SeasonWeb({
     <div className={`web-overlay ${loaded ? 'web-loaded' : ''}`}>
       <button className="web-close" onClick={onClose} title="Back to world map">
         ✕ <span>Back to the map</span>
+      </button>
+
+      <button className="web-switch-view" onClick={onSwitchToPage} title="Open the immersive season page">
+        📖 <span>Season page</span>
       </button>
 
       {(() => {
