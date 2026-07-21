@@ -1,12 +1,12 @@
 # 🔥 Survivor Atlas
 
-An interactive world map of every U.S. **Survivor** season — 48 seasons, 20 filming
+An interactive world map of every U.S. **Survivor** season — 50 seasons, 20 filming
 locations, one satellite map.
 
 ## What it does
 
 - **World map** — scroll and zoom a real satellite map (Esri World Imagery) with a
-  glowing torch pin at every season's filming location. The 16 Fiji-era seasons fan
+  glowing torch pin at every season's filming location. The 18 Fiji-era seasons fan
   out in a ring around the Mamanuca Islands.
 - **Fly-in** — click a torch (or pick from the searchable season index) and the camera
   flies to that season's island.
@@ -47,7 +47,7 @@ Pure static site — deploy `dist/` anywhere (GitHub Pages, Netlify, Vercel…).
 
 ```
 src/
-  data/seasons.ts        # all 48 seasons: coordinates, winners, taglines, theme palettes
+  data/seasons.ts        # all 50 seasons: coordinates, winners, taglines, theme palettes
   lib/fandom.ts          # Survivor Wiki API client + HTML sanitizer
   lib/theme.ts           # full-takeover theme engine
   components/

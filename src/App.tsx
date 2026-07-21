@@ -6,6 +6,8 @@ import DetailPanel from './components/DetailPanel'
 import SeasonIndex from './components/SeasonIndex'
 import Embers from './components/Embers'
 import Logotype from './components/Logotype'
+import SparkBurst from './components/SparkBurst'
+import FlameWipe from './components/FlameWipe'
 import type { Season } from './data/seasons'
 import { SEASONS } from './data/seasons'
 import { applyTheme } from './lib/theme'
@@ -39,6 +41,7 @@ export default function App() {
   const [indexOpen, setIndexOpen] = useState(false)
   const [visited, setVisited] = useState<Set<number>>(loadVisited)
   const [pendingSlug, setPendingSlug] = useState<string | null>(initial.slug)
+  const [wiping, setWiping] = useState(false)
 
   useEffect(() => {
     applyTheme(selected?.theme ?? null)
@@ -74,7 +77,13 @@ export default function App() {
   }, [handleSelect])
 
   const handleArrived = useCallback(() => {
-    setStage(s => (s === 'flying' ? 'web' : s))
+    // reduced-motion hides the wipe entirely, so its animationend would never
+    // fire — don't arm it at all
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    setStage(s => {
+      if (s === 'flying' && !reduceMotion) setWiping(true)
+      return s === 'flying' ? 'web' : s
+    })
     setSelected(current => {
       if (current) {
         setVisited(prev => {
@@ -113,7 +122,7 @@ export default function App() {
         <p className="header-tag">
           {selected
             ? `Season ${selected.number} — ${selected.title} · ${selected.location}, ${selected.country}`
-            : '48 seasons. 20 filming locations. One world map. Click a torch to begin.'}
+            : '50 seasons. 20 filming locations. One world map. Click a torch to begin.'}
         </p>
       </header>
 
@@ -135,6 +144,9 @@ export default function App() {
       </div>
 
       <Embers />
+      <SparkBurst />
+
+      {wiping && <FlameWipe onDone={() => setWiping(false)} />}
 
       {stage === 'flying' && selected && (
         <div className="flying-banner">

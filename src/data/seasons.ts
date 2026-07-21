@@ -44,7 +44,7 @@ const t = (
 
 /** Mamanuca Islands, Fiji — home of every season since 33. Pins fan out in a ring. */
 const FIJI = { lat: -17.66, lng: 177.1 }
-const fijiRing = (i: number, count = 16, radius = 0.30) => {
+const fijiRing = (i: number, count = 18, radius = 0.30) => {
   const angle = (i / count) * Math.PI * 2 - Math.PI / 2
   return {
     lat: FIJI.lat + radius * Math.sin(angle),
@@ -437,6 +437,22 @@ export const SEASONS: Season[] = [
     tagline: 'The newest chapter in the new era of Survivor.',
     theme: t('#00897b', '#f9a825', '#80cbc4', '#032220', '#08403b', 'island'),
   },
+  {
+    number: 49, title: 'Survivor 49', wikiPage: 'Survivor 49',
+    location: 'Mamanuca Islands', country: 'Fiji',
+    ...fijiRing(16), year: '2025',
+    winner: 'Savannah Louie', winnerPage: 'Savannah Louie',
+    tagline: 'The last stop before 50 — and Savannah seizes the crown.',
+    theme: t('#00695c', '#ef6c00', '#ffd180', '#032019', '#0a3a30', 'island'),
+  },
+  {
+    number: 50, title: 'In the Hands of the Fans', wikiPage: 'Survivor 50: In the Hands of the Fans',
+    location: 'Mamanuca Islands', country: 'Fiji',
+    ...fijiRing(17), year: '2026',
+    winner: 'Aubry Bracco', winnerPage: 'Aubry Bracco',
+    tagline: 'Fifty seasons in the making — legends return, the fans call the shots, and $2,000,000 is on the line.',
+    theme: t('#b8860b', '#8e0000', '#ffd700', '#0d0802', '#241a05', 'storm'),
+  },
 ]
 
 export const DEFAULT_THEME: SeasonTheme = t(
@@ -455,7 +471,7 @@ export interface Cluster {
 }
 
 export const CLUSTERS: Cluster[] = [
-  { id: 'fiji', label: 'Fiji', lat: FIJI.lat, lng: FIJI.lng, seasons: [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48] },
+  { id: 'fiji', label: 'Fiji', lat: FIJI.lat, lng: FIJI.lng, seasons: [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50] },
   { id: 'samoa', label: 'Samoa', lat: -13.94, lng: -171.77, seasons: [19, 20, 23, 24] },
   { id: 'nicaragua', label: 'Nicaragua', lat: 11.2, lng: -85.83, seasons: [21, 22, 29, 30] },
   { id: 'pearl-islands', label: 'Pearl Islands', lat: 8.3, lng: -79.06, seasons: [7, 8, 12] },

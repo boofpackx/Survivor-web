@@ -8,7 +8,9 @@ export default function Logotype() {
       <defs>
         <linearGradient id="fire-fill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#fff3d6" />
-          <stop offset="45%" stopColor="var(--th-accent)" />
+          <stop offset="45%" stopColor="var(--th-accent)">
+            <animate attributeName="offset" values="0.38;0.55;0.38" dur="4.5s" repeatCount="indefinite" />
+          </stop>
           <stop offset="100%" stopColor="var(--th-primary)" />
         </linearGradient>
         <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">

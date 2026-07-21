@@ -52,12 +52,15 @@ function torchSvg(accent: string, visited: boolean): string {
   </svg>`
 }
 
-function pinIcon(season: Season, active: boolean, visited: boolean): L.DivIcon {
+function pinIcon(
+  season: Season, active: boolean, visited: boolean, igniteDelay: number | null = null,
+): L.DivIcon {
+  const ignite = igniteDelay !== null ? `--ignite-delay:${igniteDelay.toFixed(2)}s` : ''
   return L.divIcon({
     className: '',
     html: `
-      <div class="pin ${active ? 'pin-active' : ''} ${visited ? 'pin-visited' : ''}"
-           style="--pin-color:${season.theme.primary};--pin-accent:${season.theme.accent}">
+      <div class="pin ${active ? 'pin-active' : ''} ${visited ? 'pin-visited' : ''} ${igniteDelay !== null ? 'pin-born' : ''}"
+           style="--pin-color:${season.theme.primary};--pin-accent:${season.theme.accent};${ignite}">
         ${torchSvg(season.theme.accent, visited && !active)}
         <span class="pin-num">${season.number}</span>
       </div>`,
@@ -149,9 +152,10 @@ export default function SurvivorMap({ selected, visited, onSelect, onArrived }: 
       { maxZoom: 17, opacity: 0.85 },
     ).addTo(map)
 
-    for (const season of SEASONS) {
+    for (const [i, season] of SEASONS.entries()) {
+      // staggered torch-lighting ceremony on first load
       const marker = L.marker([season.lat, season.lng], {
-        icon: pinIcon(season, false, visitedRef.current.has(season.number)),
+        icon: pinIcon(season, false, visitedRef.current.has(season.number), 0.15 + i * 0.045),
         riseOnHover: true,
       })
         .bindTooltip(
@@ -197,9 +201,24 @@ export default function SurvivorMap({ selected, visited, onSelect, onArrived }: 
     syncMarkers()
 
     mapRef.current = map
+    firstSyncRef.current = true // fresh markers carry the ignition icons — don't clobber them
     const markers = markersRef.current
     const clusterMarkers = clusterMarkersRef.current
+    // once the lighting ceremony has played, swap in plain icons so markers that
+    // get removed/re-added by cluster zoom syncs don't replay (or hide behind)
+    // the ignite delay
+    const ceremonyTimer = setTimeout(() => {
+      markers.forEach((marker, num) => {
+        const season = SEASONS.find(s => s.number === num)!
+        marker.setIcon(pinIcon(
+          season,
+          selectedRef.current?.number === num,
+          visitedRef.current.has(num),
+        ))
+      })
+    }, 3600)
     return () => {
+      clearTimeout(ceremonyTimer)
       map.remove()
       mapRef.current = null
       markers.clear()
@@ -208,14 +227,21 @@ export default function SurvivorMap({ selected, visited, onSelect, onArrived }: 
   }, [])
 
   // fly in / out + travel arc when the selection changes
+  const firstSyncRef = useRef(true)
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
 
-    markersRef.current.forEach((marker, num) => {
-      const season = SEASONS.find(s => s.number === num)!
-      marker.setIcon(pinIcon(season, selected?.number === num, visited.has(num)))
-    })
+    // skip the mount-time sync: it would rebuild the icons before first paint
+    // and wipe out the pin-born ignition ceremony
+    if (firstSyncRef.current) {
+      firstSyncRef.current = false
+    } else {
+      markersRef.current.forEach((marker, num) => {
+        const season = SEASONS.find(s => s.number === num)!
+        marker.setIcon(pinIcon(season, selected?.number === num, visited.has(num)))
+      })
+    }
 
     arcRef.current?.remove()
     arcRef.current = null

@@ -189,7 +189,10 @@ export default function SeasonWeb({
             <a
               key={node.label}
               className="web-node"
-              style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${delay}s` }}
+              style={{
+                left: `${x}%`, top: `${y}%`, animationDelay: `${delay}s`,
+                '--bob-delay': `${delay + 0.6}s`,
+              } as React.CSSProperties}
               href={`${WIKI_BASE}/wiki/${encodeURIComponent(season.wikiPage.replace(/ /g, '_'))}`}
               target="_blank" rel="noopener noreferrer"
             >
@@ -202,7 +205,10 @@ export default function SeasonWeb({
           <button
             key={node.label}
             className={`web-node ${isActive ? 'web-node-active' : ''}`}
-            style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${delay}s` }}
+            style={{
+              left: `${x}%`, top: `${y}%`, animationDelay: `${delay}s`,
+              '--bob-delay': `${delay + 0.6}s`,
+            } as React.CSSProperties}
             onClick={() => onNodeClick(node)}
           >
             <span className="web-node-icon">{node.icon}</span>
