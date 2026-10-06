@@ -1,28 +1,48 @@
 # 🔥 Survivor Atlas
 
-An interactive world map of every U.S. **Survivor** season — 50 seasons, 20 filming
-locations, one satellite map.
+An interactive world map of every U.S. **Survivor** season — with an immersive page
+for every season, a timeline, a hall of champions and a Tribal Council quiz. New
+seasons show up on their own, straight from the Survivor Wiki.
 
 ## What it does
 
-- **World map** — scroll and zoom a real satellite map (Esri World Imagery) with a
-  glowing torch pin at every season's filming location. The 18 Fiji-era seasons fan
-  out in a ring around the Mamanuca Islands.
-- **Fly-in** — click a torch (or pick from the searchable season index) and the camera
-  flies to that season's island.
-- **The season web** — on arrival, a radial web expands over the map: the season logo
-  at the center with animated threads out to Overview, Castaways, The Story, Episodes,
-  Voting History, Twists, Trivia, Production, Winner, Photo Gallery, Videos, and the
-  full wiki page.
-- **Live wiki content** — every node pulls live from the
-  [Survivor Wiki](https://survivor.fandom.com) (Fandom MediaWiki API) into a slide-in
-  detail panel: cast tables with photos, season summaries, voting history, trivia, and
-  image galleries. No API key needed.
-- **Full theme takeover** — each season has its own palette and mood; zooming into a
-  season re-skins the entire UI (Borneo's jungle greens, Australia's outback rust,
-  Winners at War's black-and-gold…).
-- **Videos** — curated YouTube reels per season (intro, blindsides, Final Tribal,
-  winner moment).
+- **World map** — a satellite map (Esri World Imagery) with a glowing tiki torch at
+  every filming location. Fiji, Samoa, Nicaragua and the other repeat hosts collapse
+  into medallions until you zoom in. Hover a torch for the season logo and winner.
+- **New seasons appear automatically** — on every visit the site asks the
+  [Survivor Wiki](https://survivor.fandom.com) whether pages exist past the newest
+  bundled season (it checks `Survivor 51`, `Survivor 52`… and follows the "next
+  season" link in the latest season's infobox). Anything it finds is added to the
+  map, index, timeline, champions hall and quiz — location, air dates, winner,
+  tribes and cast all come from the wiki, and the season's colour theme is pulled
+  from its logo. Seasons still on air get a **LIVE** badge and pulse on the map;
+  once the wiki crowns a winner they join the Hall of Champions. No code changes
+  needed.
+- **Immersive season pages** — every season has its own palette, display font,
+  texture and floating motifs, plus:
+  - an ambient particle layer matched to its texture (fireflies in the jungle, rain
+    and lightning for storm seasons, bubbles for ocean seasons, petals for China,
+    gold glints for the all-star seasons, embers, ash, dust, sand…)
+  - a landscape silhouette along the hero for its mood (waves, a smoking volcano,
+    a Mayan temple, acacias, outback mesas, jungle canopy…)
+  - section frames, corner ornaments, divider rules and scroll-in animations unique
+    to each texture (bamboo poles, gilded frames, chiselled stone, rope borders,
+    lacquer with key-fret corners…)
+  - live stats from the wiki infobox (days, castaways, episodes, tribes) and the
+    tribes as buff-style banners
+  - castaway cards with finish badges, an in-app "quick look" for any castaway or
+    wiki link, a full-screen photo lightbox, a reading-progress fuse and section
+    tracking in the sticky nav
+- **The Journey** (`#/timeline`) — every season along a torch-lit rope, era by era.
+- **Hall of Champions** (`#/champions`) — every Sole Survivor in a gilded frame,
+  two-time winners ribboned, with filters and sorting.
+- **Tribal Council quiz** (`#/quiz`) — ten questions generated from the season data;
+  every miss snuffs a torch. Your best score is remembered.
+- **Quality of life** — search everything with `/` or `Ctrl K` (seasons *and* the
+  whole wiki), draw a rock for a random season, favourites, "explored" progress,
+  shareable links to any season section, working browser back/forward, and
+  keyboard shortcuts (press `?`).
+- **Radial web view** — the original season "web" is still one key (`V`) away.
 
 ## Running it
 
@@ -33,28 +53,39 @@ npm run build    # production build → dist/
 npm run preview  # serve the production build
 ```
 
-Pure static site — deploy `dist/` anywhere (GitHub Pages, Netlify, Vercel…).
+Pure static site — deploy `dist/` anywhere. Pushes to the deploy branches publish
+to GitHub Pages via `.github/workflows/deploy-pages.yml`.
 
 ## Stack
 
 - [Vite](https://vite.dev) + React 19 + TypeScript
 - [Leaflet](https://leafletjs.com) with Esri World Imagery tiles
-- Fandom MediaWiki API (`action=parse`, `pageimages`, `generator=images`) with CORS
+- Fandom MediaWiki API (`action=parse`, `pageimages`, `prefixsearch`) with CORS — no API key
 - Theming via CSS custom properties — `src/lib/theme.ts` pushes each season's palette
-  into `:root`, everything else is pure CSS transitions
+  into `:root`; everything else is CSS
 
 ## Structure
 
 ```
 src/
-  data/seasons.ts        # all 50 seasons: coordinates, winners, taglines, theme palettes
-  lib/fandom.ts          # Survivor Wiki API client + HTML sanitizer
-  lib/theme.ts           # full-takeover theme engine
+  data/seasons.ts          # bundled seasons, eras, themes, map clusters
+  lib/
+    fandom.ts              # Survivor Wiki API client, infobox + cast parsing, sanitizer
+    discover.ts            # finds seasons newer than the bundled list
+    seasonStore.ts         # live season list (bundled + discovered)
+    palette.ts             # season theme from a logo's colours
+    router.ts              # hash routes with real history entries
+    escape.ts / toast.ts / userData.ts / images.ts / store.ts
   components/
-    SurvivorMap.tsx      # Leaflet map, torch pins, fly-to animation
-    SeasonWeb.tsx        # the radial content web
-    DetailPanel.tsx      # slide-in wiki content panel
-    SeasonIndex.tsx      # searchable season drawer
+    SurvivorMap.tsx        # Leaflet map, torch pins, clusters, fly-to
+    SeasonPage.tsx         # the immersive season page
+    Ambience.tsx           # per-texture particle atmosphere
+    Horizon.tsx            # per-mood landscape silhouettes
+    SeasonWeb.tsx + DetailPanel.tsx   # radial web view
+    SeasonIndex.tsx, Dock.tsx, CommandPalette.tsx, WikiPeek.tsx, Lightbox.tsx …
+  pages/
+    TimelinePage.tsx, ChampionsPage.tsx, QuizPage.tsx
+  styles/                  # shell, season page, index drawer, one sheet per page
 ```
 
 > Fan project. Season data and images belong to the

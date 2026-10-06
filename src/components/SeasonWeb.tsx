@@ -1,26 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Season } from '../data/seasons'
-import { SEASONS, WIKI_BASE } from '../data/seasons'
-import { getPageImage, getSections } from '../lib/fandom'
+import { seasonName, winnerLabel } from '../data/seasons'
+import { getPageImage, getSections, wikiUrl } from '../lib/fandom'
 import type { WikiSection } from '../lib/fandom'
-
-export type WebNode =
-  | { kind: 'overview'; label: string; icon: string }
-  | { kind: 'section'; label: string; icon: string; sectionIndex: string }
-  | { kind: 'winner'; label: string; icon: string }
-  | { kind: 'gallery'; label: string; icon: string }
-  | { kind: 'videos'; label: string; icon: string }
-  | { kind: 'wiki'; label: string; icon: string }
-
-/** URL-safe identifier for a node, used in deep links (#/s/28/castaways). */
-export function nodeSlug(node: WebNode): string {
-  return node.kind === 'section'
-    ? node.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    : node.kind
-}
+import { nodeSlug } from './webNodes'
+import type { WebNode } from './webNodes'
 
 interface Props {
   season: Season
+  prev: Season | null
+  next: Season | null
   activeNode: WebNode | null
   /** deep-link node slug to open automatically once nodes are known */
   autoOpenSlug?: string | null
@@ -52,7 +41,7 @@ function nodesFromSections(sections: WikiSection[]): WebNode[] {
 }
 
 export default function SeasonWeb({
-  season, activeNode, autoOpenSlug, onAutoOpened, onNodeClick, onNavigate, onSwitchToPage, onClose,
+  season, prev, next, activeNode, autoOpenSlug, onAutoOpened, onNodeClick, onNavigate, onSwitchToPage, onClose,
 }: Props) {
   const [logo, setLogo] = useState<string | null>(null)
   const [logoFallback, setLogoFallback] = useState<string | null>(null)
@@ -91,7 +80,7 @@ export default function SeasonWeb({
     const base: WebNode[] = [{ kind: 'overview', label: 'Overview', icon: '🧭' }]
     base.push(...nodesFromSections(sections))
     base.push(
-      { kind: 'winner', label: `Winner: ${season.winner}`, icon: '🏆' },
+      { kind: 'winner', label: season.winner ? `Winner: ${season.winner}` : winnerLabel(season), icon: '🏆' },
       { kind: 'gallery', label: 'Photo Gallery', icon: '🖼️' },
       { kind: 'videos', label: 'Videos', icon: '📺' },
       { kind: 'wiki', label: 'Full Wiki Page', icon: '🔗' },
@@ -127,24 +116,16 @@ export default function SeasonWeb({
         📖 <span>Season page</span>
       </button>
 
-      {(() => {
-        const prev = SEASONS.find(s => s.number === season.number - 1)
-        const next = SEASONS.find(s => s.number === season.number + 1)
-        return (
-          <>
-            {prev && (
-              <button className="web-nav web-nav-prev" onClick={() => onNavigate(prev)} title={`Survivor: ${prev.title}`}>
-                ◀ <span>S{prev.number}</span>
-              </button>
-            )}
-            {next && (
-              <button className="web-nav web-nav-next" onClick={() => onNavigate(next)} title={`Survivor: ${next.title}`}>
-                <span>S{next.number}</span> ▶
-              </button>
-            )}
-          </>
-        )
-      })()}
+      {prev && (
+        <button className="web-nav web-nav-prev" onClick={() => onNavigate(prev)} title={seasonName(prev)}>
+          ◀ <span>S{prev.number}</span>
+        </button>
+      )}
+      {next && (
+        <button className="web-nav web-nav-next" onClick={() => onNavigate(next)} title={seasonName(next)}>
+          <span>S{next.number}</span> ▶
+        </button>
+      )}
 
       <svg className="web-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
         {positioned.map(({ x, y }, i) => (
@@ -161,7 +142,7 @@ export default function SeasonWeb({
         {logo ? (
           <img
             src={logo}
-            alt={`Survivor: ${season.title} logo`}
+            alt={`${seasonName(season)} logo`}
             className="web-logo"
             referrerPolicy="no-referrer"
             onError={handleLogoError}
@@ -198,7 +179,7 @@ export default function SeasonWeb({
                 left: `${x}%`, top: `${y}%`, animationDelay: `${delay}s`,
                 '--bob-delay': `${delay + 0.6}s`,
               } as React.CSSProperties}
-              href={`${WIKI_BASE}/wiki/${encodeURIComponent(season.wikiPage.replace(/ /g, '_'))}`}
+              href={wikiUrl(season.wikiPage)}
               target="_blank" rel="noopener noreferrer"
             >
               <span className="web-node-icon">{node.icon}</span>

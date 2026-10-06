@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [claude/survivor-interactive-map-71nrru]
+    branches: [claude/survivor-interactive-map-71nrru, claude/bold-edison-7wyd7j]
   workflow_dispatch:
 
 permissions:

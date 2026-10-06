@@ -1,0 +1,436 @@
+/* ============================================================
+   THE JOURNEY — torch-lit rope trail at dusk; each card wears its
+   own season's palette.
+   ============================================================ */
+
+.tl-page {
+  --pg-accent: #ffb74d;
+  --pg-glow: rgba(255, 152, 0, 0.5);
+  background:
+    radial-gradient(90% 50% at 50% 0%, rgba(120, 70, 160, 0.25), transparent 70%),
+    linear-gradient(180deg, #0c0a1c 0%, #170f22 25%, #22140c 65%, #110904 100%);
+}
+
+.tl-sky {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 8%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 44% 22%, #ffe9c4 50%, transparent 51%),
+    radial-gradient(1px 1px at 63% 12%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 78% 26%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 90% 6%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 6% 40%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 52% 36%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 86% 44%, #ffe9c4 50%, transparent 51%),
+    radial-gradient(1px 1px at 35% 48%, #fff 50%, transparent 51%);
+  opacity: 0.55;
+  animation: tl-twinkle 6s ease-in-out infinite alternate;
+}
+
+@keyframes tl-twinkle {
+  to { opacity: 0.25; }
+}
+
+.tl-head h1 {
+  background: linear-gradient(180deg, #fff3d6 0%, #ffb74d 50%, #e65100 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px rgba(255, 120, 0, 0.45));
+}
+
+.tl-head h1 span {
+  margin: 0 0.15em;
+  font-weight: 500;
+}
+
+/* sticky era jump bar */
+.tl-eras {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 12px 64px 12px 16px;
+  background: linear-gradient(rgba(12, 9, 20, 0.92), rgba(12, 9, 20, 0.75));
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 183, 77, 0.2);
+}
+
+.tl-era-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 183, 77, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f5efe2;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.tl-era-chip small {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 10.5px;
+}
+
+.tl-era-chip:hover {
+  border-color: #ffb74d;
+}
+
+.tl-era-chip-on {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.45), rgba(230, 81, 0, 0.35));
+  border-color: #ffcc80;
+  box-shadow: 0 0 16px rgba(255, 152, 0, 0.45);
+}
+
+/* the rope */
+.tl-track {
+  position: relative;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 10px 20px 40px;
+}
+
+.tl-rope {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 8px;
+  translate: -50% 0;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(-50deg, #a1887f 0 5px, #6d4c41 5px 10px, #4e342e 10px 12px);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 0, 0, 0.5);
+}
+
+.tl-burn {
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  top: 0;
+  height: calc(var(--p, 0) * 100%);
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(255, 204, 128, 0.25), #ff9800 92%, #fff3c4);
+  box-shadow: 0 0 14px rgba(255, 152, 0, 0.7);
+  mix-blend-mode: screen;
+}
+
+.tl-flame {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--p, 0) * 100%);
+  translate: -50% -90%;
+  width: 26px;
+  height: 40px;
+  filter: drop-shadow(0 0 14px rgba(255, 140, 0, 0.9));
+}
+
+/* era signs — carved wood hanging over the rope */
+.tl-era {
+  position: relative;
+  scroll-margin-top: 70px;
+  padding-top: 18px;
+}
+
+.tl-sign {
+  position: relative;
+  z-index: 2;
+  width: min(580px, 100%);
+  margin: 30px auto 34px;
+  padding: 20px 26px 18px;
+  text-align: center;
+  border-radius: 12px;
+  border: 3px solid #2a1709;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.08) 0 2px, transparent 2px 13px, rgba(255, 255, 255, 0.04) 13px 15px, transparent 15px 31px),
+    radial-gradient(120% 80% at 30% 0%, rgba(255, 220, 160, 0.18), transparent 60%),
+    linear-gradient(180deg, #6b4423, #45290f);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.12), inset 0 -4px 10px rgba(0, 0, 0, 0.4);
+  transform-origin: 50% 0;
+}
+
+.tl-sign::before,
+.tl-sign::after {
+  content: '';
+  position: absolute;
+  top: -30px;
+  width: 4px;
+  height: 30px;
+  background: repeating-linear-gradient(-50deg, #a1887f 0 3px, #6d4c41 3px 6px);
+}
+
+.tl-sign::before { left: 22%; }
+.tl-sign::after { right: 22%; }
+
+.tl-sign-icon {
+  display: block;
+  font-size: 30px;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.tl-sign h2 {
+  margin: 0;
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+  font-size: clamp(22px, 3.4vw, 32px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffe0b2;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.tl-sign-range {
+  margin: 6px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #ffcc80;
+}
+
+.tl-sign-blurb {
+  margin: 8px 0 0;
+  font-style: italic;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+/* season cards */
+.tl-card {
+  position: relative;
+  width: calc(50% - 44px);
+  margin: 0 0 22px;
+}
+
+.tl-left { margin-right: auto; }
+.tl-right { margin-left: auto; }
+
+/* stagger right-hand cards a little so the trail zig-zags */
+.tl-right { margin-top: -48px; }
+.tl-sign + .tl-right { margin-top: 0; }
+
+.tl-node {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  border-radius: 50%;
+  border: 2px solid #3e2723;
+  background: radial-gradient(circle at 40% 35%, #8d6e63, #3e2723);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.4);
+  z-index: 3;
+}
+
+.tl-left .tl-node { right: -54px; }
+.tl-right .tl-node { left: -54px; }
+
+/* connector from card to rope */
+.tl-node::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 34px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--c2), transparent);
+  opacity: 0.6;
+}
+
+.tl-left .tl-node::before { right: 18px; background: linear-gradient(270deg, transparent, var(--c2)); }
+.tl-right .tl-node::before { left: 18px; }
+
+.tl-seen .tl-node {
+  background: radial-gradient(circle at 50% 60%, #fff3c4, var(--c2) 45%, var(--c1));
+  border-color: var(--c2);
+  box-shadow: 0 0 14px var(--c2), 0 0 30px color-mix(in srgb, var(--c2) 50%, transparent);
+}
+
+.tl-node-flame {
+  display: none;
+}
+
+.tl-card-body {
+  width: 100%;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--c2) 45%, transparent);
+  background:
+    radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--c1) 45%, transparent), transparent 62%),
+    linear-gradient(160deg, rgba(255, 240, 210, 0.05), transparent 40%),
+    color-mix(in srgb, var(--cbg) 82%, black);
+  color: #f5efe2;
+  text-align: left;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s cubic-bezier(0.2, 1.3, 0.4, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.tl-right .tl-card-body {
+  background:
+    radial-gradient(120% 120% at 100% 0%, color-mix(in srgb, var(--c1) 45%, transparent), transparent 62%),
+    linear-gradient(200deg, rgba(255, 240, 210, 0.05), transparent 40%),
+    color-mix(in srgb, var(--cbg) 82%, black);
+}
+
+.tl-card-body:hover,
+.tl-card-body:focus-visible {
+  transform: translateY(-4px) scale(1.015);
+  border-color: var(--c2);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55), 0 0 30px color-mix(in srgb, var(--c2) 35%, transparent);
+  outline: none;
+}
+
+.tl-logo {
+  flex: 0 0 86px;
+  height: 86px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.12), transparent 60%),
+    rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c2) 30%, transparent);
+}
+
+.tl-logo img {
+  max-width: 78px;
+  max-height: 78px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.7));
+  transition: transform 0.4s ease;
+}
+
+.tl-card-body:hover .tl-logo img {
+  transform: scale(1.08) rotate(-2deg);
+}
+
+.tl-logo b {
+  font-family: 'Cinzel', serif;
+  font-size: 30px;
+  color: var(--c2);
+}
+
+.tl-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tl-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c2);
+}
+
+.tl-star { color: #ffd54f; letter-spacing: 0; }
+.tl-check { color: #a5d6a7; letter-spacing: 0; }
+
+.tl-title {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.tl-place,
+.tl-winner {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.tl-winner {
+  font-weight: 600;
+}
+
+.tl-tagline {
+  margin-top: 4px;
+  font-size: 12.5px;
+  font-style: italic;
+  opacity: 0.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tl-end {
+  position: relative;
+  z-index: 2;
+  margin: 30px auto 0;
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.tl-end .css-flame {
+  width: 36px;
+  height: 56px;
+}
+
+/* reveal as the trail scrolls by */
+@media (prefers-reduced-motion: no-preference) {
+  .tl-card:not(.tl-in) { opacity: 0; }
+  .tl-left.tl-in { animation: tl-from-left 0.7s cubic-bezier(0.2, 0.9, 0.3, 1) backwards; }
+  .tl-right.tl-in { animation: tl-from-right 0.7s cubic-bezier(0.2, 0.9, 0.3, 1) backwards; }
+  .tl-sign:not(.tl-in) { opacity: 0; }
+  .tl-sign.tl-in { animation: tl-swing 1s cubic-bezier(0.25, 1.6, 0.4, 1) backwards; }
+}
+
+@keyframes tl-from-left {
+  from { opacity: 0; transform: translateX(-60px) rotate(-2deg); }
+}
+
+@keyframes tl-from-right {
+  from { opacity: 0; transform: translateX(60px) rotate(2deg); }
+}
+
+@keyframes tl-swing {
+  from { opacity: 0; transform: perspective(600px) rotateX(-80deg); }
+}
+
+@media (max-width: 820px) {
+  .tl-rope { left: 22px; }
+  .tl-card,
+  .tl-left,
+  .tl-right {
+    width: auto;
+    margin: 0 0 16px 44px;
+  }
+  .tl-right { margin-top: 0; }
+  .tl-left .tl-node,
+  .tl-right .tl-node { left: -32px; right: auto; }
+  .tl-left .tl-node::before,
+  .tl-right .tl-node::before { left: 18px; right: auto; width: 14px; background: var(--c2); }
+  .tl-sign { margin-left: 44px; width: auto; }
+  .tl-logo { flex-basis: 64px; height: 64px; }
+  .tl-logo img { max-width: 58px; max-height: 58px; }
+  .tl-title { font-size: 17px; }
+  .tl-eras { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-right: 60px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .tl-right.tl-in { animation-name: tl-from-left; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-sky { animation: none; }
+}

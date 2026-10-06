@@ -1,0 +1,356 @@
+/* ============================================================
+   HALL OF CHAMPIONS — black marble, gold leaf and spotlights.
+   ============================================================ */
+
+.ch-page {
+  --pg-accent: #ffd54f;
+  --pg-glow: rgba(255, 213, 79, 0.45);
+  --gold: #ffd54f;
+  --gold-deep: #b8860b;
+  background:
+    radial-gradient(70% 45% at 50% -8%, rgba(255, 213, 79, 0.2), transparent 70%),
+    radial-gradient(60% 50% at 50% 110%, rgba(184, 134, 11, 0.12), transparent 70%),
+    linear-gradient(180deg, #0d0b08, #050403);
+}
+
+.ch-lights {
+  position: fixed;
+  inset: -20% -10% 0;
+  pointer-events: none;
+  background:
+    conic-gradient(from 160deg at 18% -5%, transparent 0deg, rgba(255, 236, 179, 0.09) 12deg, transparent 26deg),
+    conic-gradient(from 180deg at 82% -5%, transparent 0deg, rgba(255, 236, 179, 0.09) 14deg, transparent 28deg);
+  animation: ch-sweep 9s ease-in-out infinite alternate;
+  transform-origin: 50% 0;
+}
+
+@keyframes ch-sweep {
+  from { transform: rotate(-3deg); }
+  to { transform: rotate(3deg); }
+}
+
+.ch-head h1 {
+  background: linear-gradient(100deg, #8a6100 0%, #ffe9a8 22%, #ffd54f 38%, #b8860b 55%, #fff3c4 72%, #b8860b 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(255, 193, 7, 0.35));
+  animation: ch-gild 6s ease-in-out infinite alternate;
+}
+
+@keyframes ch-gild {
+  to { background-position: 100% 0; }
+}
+
+.ch-stats {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.ch-stats div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 118px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 213, 79, 0.35);
+  background: linear-gradient(170deg, rgba(255, 213, 79, 0.1), rgba(0, 0, 0, 0.3));
+}
+
+.ch-stats strong {
+  font-family: 'Cinzel', serif;
+  font-size: 32px;
+  color: var(--gold);
+  text-shadow: 0 0 16px rgba(255, 213, 79, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.ch-stats small {
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.ch-controls {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 64px 12px 16px;
+  background: linear-gradient(rgba(8, 6, 4, 0.94), rgba(8, 6, 4, 0.8));
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 213, 79, 0.18);
+}
+
+.ch-controls input,
+.ch-controls select {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 213, 79, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f5efe2;
+  font-size: 13px;
+  outline: none;
+}
+
+.ch-controls input:focus,
+.ch-controls select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(255, 213, 79, 0.2);
+}
+
+.ch-controls select option {
+  background: #1a1408;
+}
+
+.ch-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ch-chip {
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 213, 79, 0.3);
+  background: transparent;
+  color: #f5efe2;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ch-chip-on {
+  background: linear-gradient(135deg, rgba(255, 213, 79, 0.35), rgba(184, 134, 11, 0.3));
+  border-color: var(--gold);
+  color: #fff8e1;
+}
+
+.ch-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.ch-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 26px 22px;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 30px 22px 20px;
+}
+
+.ch-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 213, 79, 0.28);
+  background:
+    radial-gradient(90% 50% at 50% 0%, color-mix(in srgb, var(--c1) 30%, transparent), transparent 70%),
+    linear-gradient(170deg, rgba(255, 213, 79, 0.07), transparent 40%),
+    #110d07;
+  text-align: center;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.25s ease-out, border-color 0.3s ease, box-shadow 0.3s ease;
+  animation: ch-in 0.6s cubic-bezier(0.2, 1.2, 0.4, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 0.035s);
+}
+
+@keyframes ch-in {
+  from { opacity: 0; transform: translateY(26px) scale(0.94); }
+}
+
+.ch-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.7), 0 0 34px rgba(255, 213, 79, 0.25);
+}
+
+.ch-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 7px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #7a5300, #ffd54f 22%, #b8860b 45%, #ffe9a8 68%, #8a6100);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 8px 20px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+
+.ch-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 9px;
+  background: #000;
+}
+
+.ch-photo-empty {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--c1) 50%, transparent), transparent 65%),
+    #0a0805;
+}
+
+.ch-photo-empty span {
+  font-family: 'Cinzel', serif;
+  font-size: 64px;
+  color: var(--gold);
+  text-shadow: 0 0 24px rgba(255, 213, 79, 0.6);
+}
+
+.ch-shine {
+  position: absolute;
+  inset: 7px;
+  border-radius: 9px;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255, 255, 255, 0.38), transparent 45%);
+  mix-blend-mode: overlay;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.ch-card:hover .ch-shine {
+  opacity: 1;
+}
+
+.ch-card h3 {
+  margin: 2px 0 0;
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  line-height: 1.2;
+  color: #fff3c4;
+}
+
+.ch-wins {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ch-win {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--c2) 60%, transparent);
+  background: color-mix(in srgb, var(--c1) 35%, rgba(0, 0, 0, 0.5));
+  color: #f5efe2;
+  font-size: 11.5px;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ch-win small {
+  opacity: 0.65;
+  margin-left: 3px;
+}
+
+.ch-win:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--c2) 50%, transparent);
+}
+
+.ch-repeat {
+  border-color: rgba(255, 213, 79, 0.6);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 28px rgba(255, 213, 79, 0.18);
+}
+
+.ch-ribbon {
+  position: absolute;
+  top: 18px;
+  right: -8px;
+  z-index: 3;
+  padding: 5px 12px;
+  background: linear-gradient(135deg, #ffe082, #b8860b);
+  color: #2a1a00;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 4px 0 0 4px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.ch-ribbon::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -8px;
+  border: 4px solid #6b4e00;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.ch-pending {
+  border-style: dashed;
+}
+
+.ch-pending .ch-frame {
+  cursor: default;
+  background: linear-gradient(135deg, #3a2a08, #6b5214 50%, #3a2a08);
+}
+
+.ch-pending .ch-photo-empty span {
+  animation: ch-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes ch-pulse {
+  50% { opacity: 0.4; transform: scale(0.92); }
+}
+
+.ch-pending-note {
+  margin: 0;
+  font-size: 12.5px;
+  opacity: 0.75;
+}
+
+.ch-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  opacity: 0.7;
+}
+
+@media (max-width: 720px) {
+  .ch-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 12px;
+    padding: 20px 12px;
+  }
+  .ch-card { padding: 10px 10px 12px; }
+  .ch-card h3 { font-size: 15px; }
+  .ch-stats div { min-width: 0; flex: 1 1 40%; }
+  .ch-controls { justify-content: flex-start; padding-right: 60px; }
+  .ch-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; justify-content: flex-start; }
+  .ch-controls input { flex: 1 1 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ch-lights, .ch-head h1, .ch-card, .ch-pending .ch-photo-empty span { animation: none; }
+  .ch-card { transform: none; }
+}

@@ -1,0 +1,90 @@
+/* ---------- shared chrome for the full-screen pages (timeline, champions, quiz) ---------- */
+
+.page {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  color: #f5efe2;
+  padding-bottom: 120px;
+  animation: page-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1);
+  scrollbar-width: thin;
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: scale(1.03); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.page-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 40;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pg-accent, var(--th-accent));
+  background: rgba(8, 6, 3, 0.75);
+  color: #f5efe2;
+  font-size: 16px;
+  backdrop-filter: blur(4px);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.page-close:hover {
+  transform: rotate(90deg);
+  box-shadow: 0 0 18px var(--pg-glow, var(--th-glow));
+}
+
+.page-head {
+  position: relative;
+  z-index: 2;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 72px 20px 22px;
+  text-align: center;
+}
+
+.page-kicker {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--pg-accent, var(--th-accent));
+}
+
+.page-head h1 {
+  margin: 0;
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+  font-size: clamp(38px, 7vw, 82px);
+  line-height: 1.02;
+  letter-spacing: 0.04em;
+}
+
+.page-sub {
+  margin: 14px auto 0;
+  max-width: 560px;
+  font-size: 15px;
+  opacity: 0.8;
+}
+
+@media (max-width: 720px) {
+  .page-head {
+    padding-top: 64px;
+  }
+  .page-close {
+    top: 12px;
+    right: 12px;
+    width: 38px;
+    height: 38px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page { animation: none; }
+}

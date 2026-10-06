@@ -51,6 +51,33 @@ export interface Season {
   winnerPage: string
   tagline: string
   theme: SeasonTheme
+  /** bundled seasons are all 'complete'; live-discovered ones may still be on air */
+  status?: SeasonStatus
+  /** true when the season was found live on the wiki rather than bundled here */
+  discovered?: boolean
+}
+
+export type SeasonStatus = 'complete' | 'airing' | 'upcoming'
+
+/** Display text for the winner slot — seasons still on air have no winner yet. */
+export function winnerLabel(s: Season): string {
+  if (s.winner) return s.winner
+  if (s.status === 'airing') return 'Crown still up for grabs'
+  if (s.status === 'upcoming') return 'Coming soon'
+  return 'See the wiki'
+}
+
+/** "Survivor: Borneo" — or just "Survivor 45" for the numbered new-era seasons. */
+export function seasonName(s: Pick<Season, 'title'>): string {
+  return /^Survivor\b/.test(s.title) ? s.title : `Survivor: ${s.title}`
+}
+
+/** "Pulau Tiga, Sabah, Malaysia" — collapses the country when it repeats the location. */
+export function placeLabel(s: Season): string {
+  // "Koror, Palau" + "Palau" shouldn't read "Koror, Palau, Palau"
+  return s.location.toLowerCase().endsWith(s.country.toLowerCase())
+    ? s.location
+    : `${s.location}, ${s.country}`
 }
 
 const t = (
@@ -129,6 +156,96 @@ const fijiRing = (i: number, count = 18, radius = 0.30) => {
     lat: FIJI.lat + radius * Math.sin(angle),
     lng: FIJI.lng + radius * 1.25 * Math.cos(angle),
   }
+}
+
+/**
+ * Map position for a Fiji season: 33–50 fill the inner ring; anything newer
+ * (found live on the wiki) lands on a wider outer ring so pins never overlap.
+ */
+export function fijiSpot(seasonNumber: number): { lat: number; lng: number } {
+  if (seasonNumber <= 50) return fijiRing(seasonNumber - 33)
+  return fijiRing(seasonNumber - 51 + 0.5, 20, 0.5)
+}
+
+/**
+ * Where to drop a pin for a live-discovered season, keyed by lowercase
+ * country (or well-known location) as written in the wiki infobox.
+ */
+export const PLACES: Record<string, { lat: number; lng: number }> = {
+  fiji: FIJI,
+  samoa: { lat: -13.94, lng: -171.77 },
+  nicaragua: { lat: 11.2, lng: -85.83 },
+  panama: { lat: 8.3, lng: -79.06 },
+  philippines: { lat: 16.1, lng: 123.0 },
+  cambodia: { lat: 10.65, lng: 103.24 },
+  palau: { lat: 7.27, lng: 134.42 },
+  malaysia: { lat: 5.723, lng: 115.652 },
+  australia: { lat: -18.412, lng: 145.923 },
+  kenya: { lat: 0.647, lng: 37.723 },
+  'french polynesia': { lat: -8.867, lng: -140.1 },
+  thailand: { lat: 6.586, lng: 99.652 },
+  brazil: { lat: -3.062, lng: -60.756 },
+  vanuatu: { lat: -17.74, lng: 168.312 },
+  guatemala: { lat: 17.062, lng: -89.402 },
+  'cook islands': { lat: -18.857, lng: -159.786 },
+  china: { lat: 29.033, lng: 115.108 },
+  gabon: { lat: -0.606, lng: 9.399 },
+  'new zealand': { lat: -36.85, lng: 174.76 },
+  mexico: { lat: 20.2, lng: -87.46 },
+  'dominican republic': { lat: 18.47, lng: -69.9 },
+  'united states': { lat: 19.6, lng: -155.5 },
+  hawaii: { lat: 19.6, lng: -155.5 },
+  tonga: { lat: -21.18, lng: -175.2 },
+  indonesia: { lat: -8.4, lng: 116.1 },
+  vietnam: { lat: 10.2, lng: 103.97 },
+  belize: { lat: 17.19, lng: -88.5 },
+  'costa rica': { lat: 9.75, lng: -83.75 },
+  madagascar: { lat: -18.77, lng: 46.87 },
+  'solomon islands': { lat: -9.43, lng: 160.0 },
+  'papua new guinea': { lat: -6.31, lng: 143.96 },
+  seychelles: { lat: -4.68, lng: 55.49 },
+  maldives: { lat: 3.2, lng: 73.22 },
+}
+
+/** Broad eras of the show — used to group the index, the timeline and the champions hall. */
+export interface Era {
+  id: string
+  name: string
+  from: number
+  /** inclusive; null = still going */
+  to: number | null
+  icon: string
+  blurb: string
+}
+
+export const ERAS: Era[] = [
+  {
+    id: 'classic', name: 'The Classic Era', from: 1, to: 10, icon: '🗿',
+    blurb: 'No idols, no advantages — just survival, social bonds and the vote.',
+  },
+  {
+    id: 'idol', name: 'The Idol Era', from: 11, to: 20, icon: '🗝️',
+    blurb: 'The hidden immunity idol arrives and the game is never the same.',
+  },
+  {
+    id: 'new-school', name: 'The New School', from: 21, to: 32, icon: '⚔️',
+    blurb: 'Redemption Island, Blood vs. Water and the rise of big-move strategy.',
+  },
+  {
+    id: 'fiji', name: 'The Fiji Era', from: 33, to: 40, icon: '🏝️',
+    blurb: 'A permanent home in Fiji, advantages everywhere — capped by Winners at War.',
+  },
+  {
+    id: 'new-era', name: 'The New Era', from: 41, to: null, icon: '⏱️',
+    blurb: '26 days, shots in the dark and beware advantages — faster and more dangerous.',
+  },
+]
+
+export function eraOf(seasonNumber: number): Era {
+  return (
+    ERAS.find(e => seasonNumber >= e.from && (e.to === null || seasonNumber <= e.to)) ??
+    ERAS[ERAS.length - 1]
+  )
 }
 
 const RAW_SEASONS: Season[] = [
@@ -537,8 +654,28 @@ const RAW_SEASONS: Season[] = [
 /** RAW palettes merged with each season's personality (texture / font / motifs). */
 export const SEASONS: Season[] = RAW_SEASONS.map(s => ({
   ...s,
+  status: 'complete',
   theme: { ...s.theme, ...(VIBES[s.number] ?? {}) },
 }))
+
+/** Build a full theme from a palette — used for seasons discovered live on the wiki. */
+export function makeTheme(
+  palette: Pick<SeasonTheme, 'primary' | 'secondary' | 'accent' | 'bg1' | 'bg2'>,
+  vibe: Pick<SeasonTheme, 'mood' | 'texture' | 'font' | 'motifs'>,
+): SeasonTheme {
+  return { ...palette, text: '#f5efe2', ...vibe }
+}
+
+/** Personalities handed out (by season number) to live-discovered Fiji-era seasons. */
+export const NEW_ERA_VIBES: Pick<SeasonTheme, 'mood' | 'texture' | 'font' | 'motifs'>[] = [
+  { mood: 'island', texture: 'water', font: 'cinzel', motifs: '🌊 🐚 🔥' },
+  { mood: 'jungle', texture: 'jungle', font: 'cinzel', motifs: '🌴 🦜 🔥' },
+  { mood: 'storm', texture: 'storm', font: 'cinzel', motifs: '⛈️ 🗿 ⚡' },
+  { mood: 'island', texture: 'tribal', font: 'cinzel', motifs: '🥁 🔥 🏝️' },
+  { mood: 'volcanic', texture: 'lava', font: 'cinzel', motifs: '🌋 🔥 🪨' },
+  { mood: 'ocean', texture: 'bamboo', font: 'cinzel', motifs: '🎋 🌺 🛶' },
+  { mood: 'ruins', texture: 'gold', font: 'cinzel', motifs: '🏆 🗝️ ✨' },
+]
 
 export const DEFAULT_THEME: SeasonTheme = t(
   '#d97b29', '#5d4037', '#ffb74d', '#120d08', '#241a10', 'island',
@@ -553,17 +690,28 @@ export interface Cluster {
   lat: number
   lng: number
   seasons: number[]
+  /** live-discovered seasons filmed in this country join the cluster too */
+  country: string
 }
 
 export const CLUSTERS: Cluster[] = [
-  { id: 'fiji', label: 'Fiji', lat: FIJI.lat, lng: FIJI.lng, seasons: [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50] },
-  { id: 'samoa', label: 'Samoa', lat: -13.94, lng: -171.77, seasons: [19, 20, 23, 24] },
-  { id: 'nicaragua', label: 'Nicaragua', lat: 11.2, lng: -85.83, seasons: [21, 22, 29, 30] },
-  { id: 'pearl-islands', label: 'Pearl Islands', lat: 8.3, lng: -79.06, seasons: [7, 8, 12] },
-  { id: 'palau', label: 'Palau', lat: 7.27, lng: 134.42, seasons: [10, 16] },
-  { id: 'cambodia', label: 'Cambodia', lat: 10.65, lng: 103.24, seasons: [31, 32] },
-  { id: 'philippines', label: 'Philippines', lat: 16.1, lng: 123.0, seasons: [25, 26, 27, 28] },
+  { id: 'fiji', label: 'Fiji', lat: FIJI.lat, lng: FIJI.lng, country: 'Fiji', seasons: [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50] },
+  { id: 'samoa', label: 'Samoa', lat: -13.94, lng: -171.77, country: 'Samoa', seasons: [19, 20, 23, 24] },
+  { id: 'nicaragua', label: 'Nicaragua', lat: 11.2, lng: -85.83, country: 'Nicaragua', seasons: [21, 22, 29, 30] },
+  { id: 'pearl-islands', label: 'Pearl Islands', lat: 8.3, lng: -79.06, country: 'Panama', seasons: [7, 8, 12] },
+  { id: 'palau', label: 'Palau', lat: 7.27, lng: 134.42, country: 'Palau', seasons: [10, 16] },
+  { id: 'cambodia', label: 'Cambodia', lat: 10.65, lng: 103.24, country: 'Cambodia', seasons: [31, 32] },
+  { id: 'philippines', label: 'Philippines', lat: 16.1, lng: 123.0, country: 'Philippines', seasons: [25, 26, 27, 28] },
 ]
+
+/** Season numbers that belong to a cluster, including live-discovered ones. */
+export function clusterMembers(cluster: Cluster, seasons: Season[]): Season[] {
+  return seasons.filter(
+    s =>
+      cluster.seasons.includes(s.number) ||
+      (s.discovered && s.country.toLowerCase() === cluster.country.toLowerCase()),
+  )
+}
 
 /** Zoom level at which clusters burst apart into individual torches. */
 export const CLUSTER_BREAK_ZOOM = 7

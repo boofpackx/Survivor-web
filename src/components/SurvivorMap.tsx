@@ -2,21 +2,27 @@ import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { Season } from '../data/seasons'
-import { CLUSTERS, CLUSTER_BREAK_ZOOM, SEASONS } from '../data/seasons'
+import { CLUSTERS, CLUSTER_BREAK_ZOOM, clusterMembers, placeLabel, winnerLabel } from '../data/seasons'
 
 interface Props {
+  seasons: Season[]
+  logos: Record<string, string>
   selected: Season | null
   visited: Set<number>
+  /** jump straight to a newly selected season instead of flying (page-to-page hops) */
+  instant: boolean
   onSelect: (season: Season) => void
-  /** fired when the fly-in animation for the selected season finishes */
-  onArrived: () => void
+  /** fired when the camera has landed on the selected season */
+  onArrived: (seasonNumber: number) => void
 }
 
 const WORLD_CENTER: L.LatLngExpression = [12, 160]
 const WORLD_ZOOM = 3
 const SEASON_ZOOM = 11
 
-const CLUSTERED_SEASONS = new Set(CLUSTERS.flatMap(c => c.seasons))
+function esc(text: string): string {
+  return text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
+}
 
 /** Hand-drawn tiki torch: bamboo pole, rope wrap, layered animated flame. */
 function torchSvg(accent: string, visited: boolean): string {
@@ -52,22 +58,52 @@ function torchSvg(accent: string, visited: boolean): string {
   </svg>`
 }
 
-function pinIcon(
-  season: Season, active: boolean, visited: boolean, igniteDelay: number | null = null,
-): L.DivIcon {
+interface PinState {
+  active: boolean
+  visited: boolean
+  igniteDelay: number | null
+}
+
+function pinIcon(season: Season, { active, visited, igniteDelay }: PinState): L.DivIcon {
   const ignite = igniteDelay !== null ? `--ignite-delay:${igniteDelay.toFixed(2)}s` : ''
+  const status = season.status ?? 'complete'
+  const classes = [
+    'pin',
+    active && 'pin-active',
+    visited && 'pin-visited',
+    igniteDelay !== null && 'pin-born',
+    status !== 'complete' && `pin-${status}`,
+  ].filter(Boolean).join(' ')
+  const tag = status === 'airing' ? '<span class="pin-tag pin-tag-live">LIVE</span>'
+    : status === 'upcoming' ? '<span class="pin-tag pin-tag-soon">SOON</span>' : ''
   return L.divIcon({
     className: '',
     html: `
-      <div class="pin ${active ? 'pin-active' : ''} ${visited ? 'pin-visited' : ''} ${igniteDelay !== null ? 'pin-born' : ''}"
+      <div class="${classes}"
            style="--pin-color:${season.theme.primary};--pin-accent:${season.theme.accent};${ignite}">
+        ${status === 'airing' ? '<span class="pin-pulse"></span>' : ''}
         ${torchSvg(season.theme.accent, visited && !active)}
         <span class="pin-num">${season.number}</span>
+        ${tag}
       </div>`,
     iconSize: [40, 78],
     iconAnchor: [20, 74],
     tooltipAnchor: [0, -74],
   })
+}
+
+function tooltipHtml(season: Season, logo: string | undefined): string {
+  const status = season.status === 'airing' ? '<span class="pin-tip-live">● On the air now</span>'
+    : season.status === 'upcoming' ? '<span class="pin-tip-live">Coming soon</span>' : ''
+  return `<div class="pin-tip">
+      ${logo ? `<img class="pin-tip-logo" src="${esc(logo)}" alt="" referrerpolicy="no-referrer"/>` : ''}
+      <div class="pin-tip-text">
+        <strong>S${season.number} · ${esc(season.title)}</strong>
+        <span>${esc(placeLabel(season))} · ${esc(season.year)}</span>
+        <em>🏆 ${esc(winnerLabel(season))}</em>
+        ${status}
+      </div>
+    </div>`
 }
 
 function clusterIcon(label: string, count: number): L.DivIcon {
@@ -77,7 +113,7 @@ function clusterIcon(label: string, count: number): L.DivIcon {
     html: `
       <div class="cluster-medallion ${count >= 8 ? 'cluster-large' : ''}" style="width:${size}px;height:${size}px">
         <span class="cluster-flames">🔥</span>
-        <span class="cluster-label">${label}</span>
+        <span class="cluster-label">${esc(label)}</span>
         <span class="cluster-count">${count}</span>
       </div>`,
     iconSize: [size, size],
@@ -110,22 +146,59 @@ function arcPoints(from: L.LatLng, to: L.LatLng): L.LatLng[] {
   return pts
 }
 
-export default function SurvivorMap({ selected, visited, onSelect, onArrived }: Props) {
+export default function SurvivorMap({ seasons, logos, selected, visited, instant, onSelect, onArrived }: Props) {
   const mapRef = useRef<L.Map | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const markersRef = useRef<Map<number, L.Marker>>(new Map())
+  /** last icon/tooltip we rendered per marker — skip identical rebuilds (they restart the flame) */
+  const iconSigRef = useRef<Map<number, string>>(new Map())
+  const tipSigRef = useRef<Map<number, string>>(new Map())
+  /** markers mid-ignition keep their ceremony icon until this timestamp */
+  const igniteUntilRef = useRef<Map<number, number>>(new Map())
+  const timersRef = useRef<number[]>([])
   const clusterMarkersRef = useRef<L.Marker[]>([])
+  const clusteredRef = useRef<Set<number>>(new Set())
+  const syncVisibilityRef = useRef<() => void>(() => {})
   const arcRef = useRef<L.Polyline | null>(null)
   const prevPosRef = useRef<L.LatLng | null>(null)
+  const pendingArrivalRef = useRef<(() => void) | null>(null)
+
+  const seasonsRef = useRef(seasons)
+  const logosRef = useRef(logos)
   const visitedRef = useRef(visited)
   const selectedRef = useRef(selected)
+  const instantRef = useRef(instant)
   const onSelectRef = useRef(onSelect)
   const onArrivedRef = useRef(onArrived)
-  visitedRef.current = visited
-  selectedRef.current = selected
-  onSelectRef.current = onSelect
-  onArrivedRef.current = onArrived
+  useEffect(() => {
+    seasonsRef.current = seasons
+    logosRef.current = logos
+    visitedRef.current = visited
+    selectedRef.current = selected
+    instantRef.current = instant
+    onSelectRef.current = onSelect
+    onArrivedRef.current = onArrived
+  })
 
+  /** rebuild one marker's icon from current state (no-op if nothing changed) */
+  const refreshIcon = (num: number, force = false) => {
+    const marker = markersRef.current.get(num)
+    const season = seasonsRef.current.find(s => s.number === num)
+    if (!marker || !season) return
+    if (!force && (igniteUntilRef.current.get(num) ?? 0) > performance.now()) return
+    igniteUntilRef.current.delete(num)
+    const state: PinState = {
+      active: selectedRef.current?.number === num,
+      visited: visitedRef.current.has(num),
+      igniteDelay: null,
+    }
+    const sig = `${state.active}|${state.visited}|${season.status}|${season.theme.primary}|${season.theme.accent}`
+    if (iconSigRef.current.get(num) === sig) return
+    iconSigRef.current.set(num, sig)
+    marker.setIcon(pinIcon(season, state))
+  }
+
+  // map + tile layers, once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
@@ -152,43 +225,10 @@ export default function SurvivorMap({ selected, visited, onSelect, onArrived }: 
       { maxZoom: 17, opacity: 0.85 },
     ).addTo(map)
 
-    for (const [i, season] of SEASONS.entries()) {
-      // staggered torch-lighting ceremony on first load
-      const marker = L.marker([season.lat, season.lng], {
-        icon: pinIcon(season, false, visitedRef.current.has(season.number), 0.15 + i * 0.045),
-        riseOnHover: true,
-      })
-        .bindTooltip(
-          `<div class="pin-tip">
-             <strong>S${season.number} · ${season.title}</strong>
-             <span>${season.location}, ${season.country} · ${season.year}</span>
-             <em>Sole Survivor: ${season.winner}</em>
-           </div>`,
-          { direction: 'top', opacity: 1, className: 'pin-tooltip' },
-        )
-        .on('click', () => onSelectRef.current(season))
-      markersRef.current.set(season.number, marker)
-    }
-
-    for (const cluster of CLUSTERS) {
-      const members = SEASONS.filter(s => cluster.seasons.includes(s.number))
-      const bounds = L.latLngBounds(members.map(s => [s.lat, s.lng] as [number, number]))
-      const marker = L.marker([cluster.lat, cluster.lng], {
-        icon: clusterIcon(cluster.label, cluster.seasons.length),
-        zIndexOffset: 1000,
-      }).on('click', () => {
-        map.flyToBounds(bounds.pad(0.35), {
-          duration: 1.4,
-          maxZoom: CLUSTER_BREAK_ZOOM + 2,
-        })
-      })
-      clusterMarkersRef.current.push(marker)
-    }
-
-    const syncMarkers = () => {
+    const syncVisibility = () => {
       const zoomedIn = map.getZoom() >= CLUSTER_BREAK_ZOOM
       markersRef.current.forEach((marker, num) => {
-        const show = zoomedIn || !CLUSTERED_SEASONS.has(num)
+        const show = zoomedIn || !clusteredRef.current.has(num)
         if (show && !map.hasLayer(marker)) marker.addTo(map)
         if (!show && map.hasLayer(marker)) marker.remove()
       })
@@ -197,82 +237,159 @@ export default function SurvivorMap({ selected, visited, onSelect, onArrived }: 
         if (zoomedIn && map.hasLayer(marker)) marker.remove()
       })
     }
-    map.on('zoomend', syncMarkers)
-    syncMarkers()
-
+    syncVisibilityRef.current = syncVisibility
+    map.on('zoomend', syncVisibility)
     mapRef.current = map
-    firstSyncRef.current = true // fresh markers carry the ignition icons — don't clobber them
+
     const markers = markersRef.current
-    const clusterMarkers = clusterMarkersRef.current
-    // once the lighting ceremony has played, swap in plain icons so markers that
-    // get removed/re-added by cluster zoom syncs don't replay (or hide behind)
-    // the ignite delay
-    const ceremonyTimer = setTimeout(() => {
-      markers.forEach((marker, num) => {
-        const season = SEASONS.find(s => s.number === num)!
-        marker.setIcon(pinIcon(
-          season,
-          selectedRef.current?.number === num,
-          visitedRef.current.has(num),
-        ))
-      })
-    }, 3600)
+    const iconSigs = iconSigRef.current
+    const tipSigs = tipSigRef.current
+    const timers = timersRef.current
     return () => {
-      clearTimeout(ceremonyTimer)
+      timers.forEach(t => clearTimeout(t))
+      timers.length = 0
       map.remove()
       mapRef.current = null
       markers.clear()
-      clusterMarkers.length = 0
+      iconSigs.clear()
+      tipSigs.clear()
+      clusterMarkersRef.current = []
     }
   }, [])
 
-  // fly in / out + travel arc when the selection changes
-  const firstSyncRef = useRef(true)
+  // markers + cluster medallions follow the (live-updating) season list
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
+    const markers = markersRef.current
+    const firstBatch = markers.size === 0
 
-    // skip the mount-time sync: it would rebuild the icons before first paint
-    // and wipe out the pin-born ignition ceremony
-    if (firstSyncRef.current) {
-      firstSyncRef.current = false
-    } else {
-      markersRef.current.forEach((marker, num) => {
-        const season = SEASONS.find(s => s.number === num)!
-        marker.setIcon(pinIcon(season, selected?.number === num, visited.has(num)))
+    seasons.forEach((season, i) => {
+      if (markers.has(season.number)) return
+      // staggered torch-lighting ceremony on first load; late arrivals light on their own
+      const delay = firstBatch ? 0.15 + i * 0.045 : 0.3
+      const marker = L.marker([season.lat, season.lng], {
+        icon: pinIcon(season, {
+          active: selectedRef.current?.number === season.number,
+          visited: visitedRef.current.has(season.number),
+          igniteDelay: delay,
+        }),
+        riseOnHover: true,
+        keyboard: true,
+        alt: `Season ${season.number}: ${season.title}`,
       })
-    }
+        .bindTooltip(tooltipHtml(season, logosRef.current[season.wikiPage]), {
+          direction: 'top', opacity: 1, className: 'pin-tooltip',
+        })
+        .on('click', () => {
+          const current = seasonsRef.current.find(s => s.number === season.number)
+          if (current) onSelectRef.current(current)
+        })
+      markers.set(season.number, marker)
+      const settleMs = (delay + 0.9) * 1000
+      igniteUntilRef.current.set(season.number, performance.now() + settleMs)
+      // once ignited, swap in a plain icon so cluster zoom re-adds don't replay the ceremony
+      timersRef.current.push(window.setTimeout(() => refreshIcon(season.number, true), settleMs))
+    })
+
+    const live = new Set(seasons.map(s => s.number))
+    markers.forEach((marker, num) => {
+      if (live.has(num)) return
+      marker.remove()
+      markers.delete(num)
+    })
+
+    clusterMarkersRef.current.forEach(m => m.remove())
+    clusteredRef.current = new Set()
+    clusterMarkersRef.current = CLUSTERS.map(cluster => {
+      const members = clusterMembers(cluster, seasons)
+      members.forEach(s => clusteredRef.current.add(s.number))
+      const bounds = L.latLngBounds(members.map(s => [s.lat, s.lng] as [number, number]))
+      return L.marker([cluster.lat, cluster.lng], {
+        icon: clusterIcon(cluster.label, members.length),
+        zIndexOffset: 1000,
+        keyboard: true,
+        alt: `${cluster.label}: ${members.length} seasons`,
+      }).on('click', () => {
+        map.flyToBounds(bounds.pad(0.35), { duration: 1.4, maxZoom: CLUSTER_BREAK_ZOOM + 2 })
+      })
+    })
+    syncVisibilityRef.current()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seasons])
+
+  // icons reflect selection / visited / live status
+  useEffect(() => {
+    markersRef.current.forEach((_, num) => refreshIcon(num))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seasons, selected, visited])
+
+  // season logos appear in the hover cards once they've loaded
+  useEffect(() => {
+    markersRef.current.forEach((marker, num) => {
+      const season = seasons.find(s => s.number === num)
+      if (!season) return
+      const logo = logos[season.wikiPage]
+      const sig = `${logo ?? ''}|${season.status}|${season.winner}|${season.title}`
+      if (tipSigRef.current.get(num) === sig) return
+      tipSigRef.current.set(num, sig)
+      marker.setTooltipContent(tooltipHtml(season, logo))
+    })
+  }, [logos, seasons])
+
+  // fly in / out + travel arc when the selection changes
+  const selectedNum = selected?.number ?? null
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    const season = selectedRef.current
 
     arcRef.current?.remove()
     arcRef.current = null
-
-    if (selected) {
-      const from = prevPosRef.current ?? map.getCenter()
-      const to = L.latLng(selected.lat, selected.lng)
-      const pts = arcPoints(from, to)
-      arcRef.current = L.polyline(pts, {
-        className: 'travel-arc',
-        color: selected.theme.accent,
-        weight: 2.5,
-        dashArray: '1 9',
-        opacity: 0.9,
-      }).addTo(map)
-
-      map.once('moveend', () => {
-        onArrivedRef.current()
-        // fade the arc out once we've landed
-        setTimeout(() => {
-          arcRef.current?.remove()
-          arcRef.current = null
-        }, 1200)
-      })
-      const target = L.latLng(selected.lat, nearestLng(map.getCenter().lng, selected.lng))
-      map.flyTo(target, SEASON_ZOOM, { duration: 2.2 })
-      prevPosRef.current = to
-    } else {
-      map.flyTo(WORLD_CENTER, WORLD_ZOOM, { duration: 1.6 })
+    if (pendingArrivalRef.current) {
+      map.off('moveend', pendingArrivalRef.current)
+      pendingArrivalRef.current = null
     }
-  }, [selected, visited])
+
+    if (!season || season.number !== selectedNum) {
+      map.flyTo(WORLD_CENTER, WORLD_ZOOM, { duration: 1.6 })
+      return
+    }
+
+    const to = L.latLng(season.lat, season.lng)
+    const target = L.latLng(season.lat, nearestLng(map.getCenter().lng, season.lng))
+    if (instantRef.current) {
+      // the full-screen page hides the map — no need to animate behind it
+      map.setView(target, SEASON_ZOOM, { animate: false })
+      prevPosRef.current = to
+      onArrivedRef.current(season.number)
+      return
+    }
+
+    const from = prevPosRef.current ?? map.getCenter()
+    arcRef.current = L.polyline(arcPoints(from, to), {
+      className: 'travel-arc',
+      color: season.theme.accent,
+      weight: 2.5,
+      dashArray: '1 9',
+      opacity: 0.9,
+    }).addTo(map)
+
+    const arrived = () => {
+      pendingArrivalRef.current = null
+      if (selectedRef.current?.number !== season.number) return
+      onArrivedRef.current(season.number)
+      // fade the arc out once we've landed
+      window.setTimeout(() => {
+        arcRef.current?.remove()
+        arcRef.current = null
+      }, 1200)
+    }
+    pendingArrivalRef.current = arrived
+    map.once('moveend', arrived)
+    map.flyTo(target, SEASON_ZOOM, { duration: 2.2 })
+    prevPosRef.current = to
+  }, [selectedNum])
 
   return <div ref={containerRef} className="map-root" />
 }
